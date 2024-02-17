@@ -1,0 +1,470 @@
+
+% FITTING S AND TAU TO MEAN OF ALL SUBJECTS' d' AND meta-d' SPLA 072023
+
+% % 0.3
+% fit_3 = [-457.295932877911	98.0204755844046	0.0103072194984300];
+% % 0.6
+% fit_6 = [-602.813230649464	121.561575089178	0.0176512639212762];
+
+% 0.1 alpha of 0.1 for high PE condition
+fit_1 = [-879.941967991654 136.383362056827	-0.0103557840141724];
+
+% 0.2 alpha of 0.2 for low PE condition 
+fit_2 = [-665.588899044654 119.317503767596 -0.00453928763253160];
+
+% [PE6:lowC_lowCoh PE6:lowC_hiCoh PE3:hiC_lowCoh PE3:hiC_hiCoh]
+ sub(1,:)= [2.58046643 2.872464169 1.319627678 2.4148281];
+ sub(2,:)= [0.6243293747 0.4826132377 0.3744850743 0.1452834641];
+ sub(3,:)= [1.043242296 3.157590626 0.505668042 1.376911035];
+ sub(4,:)= [1.336925018 1.78575868 0.9065278437 1.49233436];
+ sub(5,:)= [3.039179574 4.482805455 1.155937203 3.597714473];
+ sub(6,:)= [1.932778776 3.048378033 1.159111084 2.411120151];
+ sub(7,:)= [2.569651368 4.443039177 1.727277381 3.560928683];
+ sub(8,:)= [1.698602401 2.30495999 0.9812839733 1.854568125];
+ sub(9,:)= [1.920058123 3.169084264 0.9880277804 2.446372699];
+ sub(10,:)= [0.1342400125 1.843932025 0.1734856764 0.5162146335];
+ sub(11,:)= [0.5621005216 1.95091954 0.306910977 1.704888534];
+ sub(12,:)= [1.04022067 0.7982484692 0.6249876153 0.530232748];
+ sub(13,:)= [0.2903511651 0.5601963875 -0.1225625209 -0.294534835];
+ sub(14,:)= [2.63314912 3.04574771 1.565672481 2.154791089];
+ sub(15,:)= [2.030232308 2.375094433 1.442148721 2.365025102];
+ sub(16,:)= [2.03272232 2.732382615 1.237513809 1.953568025];
+ sub(17,:)= [1.577964419 1.766625025 1.038343286 1.700674488];
+ sub(18,:)= [2.333901174 2.834820325 1.25560042 2.066470528];
+ sub(19,:)= [0.8619007826 1.005180297 0.3350013948 0.4666264737];
+ sub(20,:)= [1.480967952 2.877529792 3.136776087 3.476111938];
+
+ all_dp = mean(sub,1);
+
+% lowCdprime = 1.9815; % all 20 subjects for LOW CONFLICT CONDITION
+% alpha01 = [-879.941967991654	136.383362056827 -0.0103557840141724];
+% p1 = alpha01;
+% p1(3) = alpha01(3) -  lowCdprime;
+% alpha1 = roots(p1);
+% PE for low conflict = 0.0163241350307032
+
+for stim = 1:4
+    p1 = fit_1;
+    p1(3) = fit_1(3) -  all_dp(stim);
+    PE01(stim,:) = roots(p1); % [0.01278 0.02011 0.00785 0.01463];
+
+    p2 = fit_2;
+    p2(3) = fit_2(3) -  all_dp(stim);
+    PE02(stim,:) = roots(p2); % [0.01278 0.02011 0.00785 0.01463];
+end
+
+
+%% creating stim variable with fitted S to d' FOR LR RUNS!!!
+
+stim = [];
+
+% [PE6:lowC_lowCoh PE6:lowC_hiCoh PE3:hiC_lowCoh PE3:hiC_hiCoh]
+% hi coh low conflict, PE:NE 6:1
+% hi coh hi conflict, PE:NE 3:1
+% low coh low conflict, PE:NE 6:1
+% low coh hi conflict, PE:NE 3:1
+
+stim(1,:) = [PE01(2,2), PE01(2,2)/10]; 
+stim(2,:) = [PE02(4,2), PE02(4,2)/5]; 
+stim(3,:) = [PE01(1,2), PE01(1,2)/10];
+stim(4,:) = [PE02(3,2), PE02(3,2)/5];
+
+all_stimLR = stim;
+
+%% simulating MI runs with new adjusted stim and tau 
+
+newStim_mult = all_stimLR ./ ([0.008571, 0.001429; 0.007500, 0.002500; ...
+                0.006857, 0.001143; 0.006000, 0.002000]); % fitted stim/old stim LR 
+
+stimMI = newStim_mult .* [0.01, 0; 0.006, 0.004; ... 
+             0.006, 0; 0.0036, 0.0024]; % multiplicative factor * old stim MI 
+
+[boldMI, ~, correctMI, saveWMI] = simBOLD_itersMI(stimMI, 0.2, 100);
+
+lowCd = mean(boldMI(1,:,:),3); % [.01, 0.0] hiD, lowC MEANING ACROSS TRIALS!
+hiCd = mean(boldMI(2,:,:),3); % [.006, .004] highC dense
+lowCs = mean(boldMI(3,:,:),3); % [.006, 0.0] lowC sparse
+hiCs = mean(boldMI(4,:,:),3); % [.0036, .0024] highC sparse
+
+dense_I_idx = (lowCd - hiCd) ./ (lowCd + hiCd); %SPLA changed denominator 05262023
+sparse_I_idx = (lowCs - hiCs) ./ (lowCs + hiCs); %SPLA changed denominator 05262023
+
+dense_I_idx = dense_I_idx * 100;
+% if any(dense_I_idx < 0)
+%     dense_I_idx = dense_I_idx - min(dense_I_idx); % SPLA 02142024 had to add this for now negative inh index with /10, /1.5 stim 
+%     dense_I_idx(1) = .0001;
+% end
+
+sparse_I_idx = sparse_I_idx * 100;
+
+%% stimulating LR runs with fitted S to d' and tau to meta-d'
+
+subjects = 1000;
+
+parfor s = 1:subjects
+   [boldLR{s}, perf{s}, correctLR{s}, saveWLR{s}] = simBOLD_iters_tau(all_stimLR, 0.2, 100);
+ 
+    % prepare for AUC
+    [bin_levels{s}, activity{s}, response{s}, answer_LR{s}] = LR_sim_output(perf{s}, boldLR{s}, correctLR{s});
+end
+
+% calculate AUC
+for s = 1:subjects
+    for i = 1:20
+        sub_activity = activity{s};
+        [~,~,~,AUCx(s,i)] = perfcurve(bin_levels{s}.X, sub_activity(:,i),1);
+        [~,~,~,AUCd(s,i)] = perfcurve(bin_levels{s}.D, sub_activity(:,i),1);
+        [~,~,~,AUCresp(s,i)] = perfcurve(response{s}, sub_activity(:,i),0);
+    end
+end 
+
+%% %% getting behavioral performance stats and plotting them
+% 
+% stim = [ 0.008571, 0.001429; ... % hi coh low conflict, PE:NE 6:1
+%          0.007500, 0.002500; ...   % hi coh hi conflict, PE:NE 3:1
+%          0.006857, 0.001143; ... % low coh low conflict, PE:NE 6:1
+%          0.006000, 0.002000 ]; % low coh hi conflict, PE:NE 3:1
+ 
+% variables are set up so out the 400, each increment of 100 is a
+ % different stim, so need to separate them by stim:
+
+changeLims = 1;
+makePrettySize = 15;
+
+
+stim = [1 100; 101 200; 201 300; 301 400];
+ds = nan(4,subjects);
+mcs_x = ds;
+mcs_d = ds;
+pcs = ds;
+
+for i_sub = 1:subjects
+    for i_stim = 1:4
+      
+       resp = response{i_sub}; % grab data from current simulated subject
+       resp = resp(stim(i_stim,1):stim(i_stim,2)); % now grab the correct stim combination (1:4)
+       
+       correct_ans = answer_LR{i_sub};
+       correct_ans = correct_ans(stim(i_stim,1):stim(i_stim,2));
+      
+       conf_x = bin_levels{i_sub}.X; 
+       conf_x = conf_x(stim(i_stim,1):stim(i_stim,2)) + 1;
+      
+       conf_d = bin_levels{i_sub}.D;
+       conf_d = conf_d(stim(i_stim,1):stim(i_stim,2)) + 1;
+
+        % calculate percent correct and mean confidence 
+        pc(i_stim) = mean(resp == correct_ans);
+        mc_x(i_stim) = mean(conf_x);
+        mc_d(i_stim) = mean(conf_d);
+        
+        % calculate d'
+        hr = (sum(correct_ans == 1 & resp == 1) +.5) / (sum(correct_ans == 1)+1);
+        far = (sum(correct_ans == 0 & resp == 1) +.5) / (sum(correct_ans == 0)+1);
+
+        d(i_stim)  = norminv(hr) - norminv(far);
+        
+        % coherence
+%             coh(i_stim) = unique(data.stim.fractionCoherent(f));
+    end
+    ds(:,i_sub)   = d;
+    mcs_x(:,i_sub)  = mc_x;
+    mcs_d(:,i_sub)  = mc_d;
+    pcs(:,i_sub)  = pc;
+end
+
+% compute mean and SEM
+d_m   = mean(ds,2);
+mc_m_x  = mean(mcs_x,2);
+mc_m_d  = mean(mcs_d,2);
+pc_m  = mean(pcs,2);
+
+d_sem   = std(ds,[],2) / sqrt(subjects);
+mc_sem_x  = std(mcs_x,[],2) / sqrt(subjects);
+mc_sem_d  = std(mcs_d,[],2) / sqrt(subjects);
+pc_sem  = std(pcs,[],2) / sqrt(subjects);
+
+%reshaping things to be like real behavioral data
+d_m2(:,1) = d_m(3:4); d_m2(:,2) = d_m(1:2);
+mc_m_x2(:,1) = mc_m_x(3:4); mc_m_x2(:,2) = mc_m_x(1:2);
+mc_m_d2(:,1) = mc_m_d(3:4); mc_m_d2(:,2) = mc_m_d(1:2);
+pc_m2(:,1) = pc_m(3:4); pc_m2(:,2) = pc_m(1:2);
+
+d_sem2(:,1) = d_sem(3:4); d_sem2(:,2) = d_sem(1:2);
+mc_sem_x2(:,1) = mc_sem_x(3:4); mc_sem_x2(:,2) = mc_sem_x(1:2);
+mc_sem_d2(:,1) = mc_sem_d(3:4); mc_sem_d2(:,2) = mc_sem_d(1:2);
+pc_sem2(:,1) = pc_sem(3:4); pc_sem2(:,2) = pc_sem(1:2);
+
+% bar plot d' and mean conf
+figure; 
+
+subplot(1,3,1);
+% bar_error(d_m2, d_sem2);
+barWithErrors(d_m2, d_sem2);
+if changeLims
+    set(gca, 'ylim', [0.8 2.8]);
+    set(gca,'XTick',[1 2])
+end
+% set(gca,'XTickLabel',{'low conflict','hi conflict'})
+set(gca,'XTickLabel',{'high PE:NE','low PE:NE'})
+ylabel('d''')
+% title(['data for n = ' num2str(subjects)])
+
+subplot(1,3,2);
+% bar_error(mc_m_x2, mc_sem_x2);
+barWithErrors(mc_m_x2, mc_sem_x2);
+yy = get(gca, 'ylim');
+% set(gca, 'ylim', [1 yy(2)]);
+if changeLims
+    set(gca, 'ylim', [1.3 1.7]);
+    set(gca,'XTick',[1 2])
+end
+% set(gca,'XTickLabel',{'low conflict','hi conflict'})
+set(gca,'XTickLabel',{'high PE:NE','low PE:NE'})
+legend('low coherence','high coherence')
+ylabel('mean conf x')
+
+subplot(1,3,3);
+% bar_error(mc_m_d2, mc_sem_d2);
+barWithErrors(mc_m_d2, mc_sem_d2);
+yy = get(gca, 'ylim');
+% set(gca, 'ylim', [1 yy(2)]);
+if changeLims
+    set(gca, 'ylim', [1.3 1.7]);
+    set(gca,'XTick',[1 2])
+end
+% set(gca,'XTickLabel',{'low conflict','hi conflict'})
+set(gca,'XTickLabel',{'high PE:NE','low PE:NE'})
+legend('low coherence','high coherence')
+ylabel('mean conf δ')
+makePretty(makePrettySize)
+
+% plot conf_x vs d'
+figure; subplot(1,2,1); hold on;
+plot(d_m2(1,:), mc_m_x2(1,:), 'go-', 'LineWidth', 2);
+plot(d_m2(2,:), mc_m_x2(2,:), 'ro-', 'LineWidth', 2);
+hv_errorbars(d_m2(1,:), mc_m_x2(1,:), d_sem2(1,:), mc_sem_x2(1,:), 'g-', .5);
+hv_errorbars(d_m2(2,:), mc_m_x2(2,:), d_sem2(2,:), mc_sem_x2(2,:), 'r-', .5);
+if changeLims
+    xlim([0.8, 2.8]);
+    ylim([1.3, 1.7]);
+end
+xlabel('d''')
+ylabel('mean conf x')
+% title(['data for n = ' num2str(subjects)])
+
+% legend(['low conflict (PE/NE = ' num2str(PE_NE_low) ')'], ['high conflict (PE/NE = ' num2str(PE_NE_high) ')'],'Location','NorthWest');
+% legend('low conflict', 'hi conflict')
+legend('high PE:NE', 'low PE:NE')
+
+% plot conf_d vs d'
+% figure; hold on;
+subplot(1,2,2); hold on;
+plot(d_m2(1,:), mc_m_d2(1,:), 'go-', 'LineWidth', 2);
+plot(d_m2(2,:), mc_m_d2(2,:), 'ro-', 'LineWidth', 2);
+hv_errorbars(d_m2(1,:), mc_m_d2(1,:), d_sem2(1,:), mc_sem_d2(1,:), 'g-', .5);
+hv_errorbars(d_m2(2,:), mc_m_d2(2,:), d_sem2(2,:), mc_sem_d2(2,:), 'r-', .5);
+if changeLims
+    xlim([0.8, 2.8]);
+    ylim([1.3, 1.7]);
+end
+xlabel('d''')
+ylabel('mean conf δ')
+legend('high PE:NE', 'low PE:NE')
+% title(['data for n = ' num2str(subjects)])
+% legend(['low conflict (PE/NE = ' num2str(PE_NE_low) ')'], ['high conflict (PE/NE = ' num2str(PE_NE_high) ')'],'Location','NorthWest');
+% legend('low conflict', 'hi conflict')
+
+makePretty(makePrettySize)
+
+%% now do corrs and plot stuff
+
+%load('MI_LR_1192022_2.mat','dense_I_idx');
+
+for s = 1:subjects
+    dolog = 1; % take the log of InhIndx?
+    
+    AUCconfx = AUCx(s,:); % X or delta model ?
+    AUCconfd = AUCd(s,:);
+    AUCdec = AUCresp(s,:);
+    IDX = dense_I_idx; % *100; % can also check on inh_inxS
+    
+        % do we take the log?
+        if dolog, inhIndx = log10(IDX); else, inhIndx = IDX; end
+    
+        % plot InhIndex vs AUC for decision vs conf
+     % AUC x-model
+          f = fit(inhIndx',AUCconfx','poly1');
+          fit_valsSim.cx(s,:) = coeffvalues(f);
+          fitsSim.cx{s,:} = f;
+          
+          [r,p] = corr(inhIndx',AUCconfx',"type","Pearson");
+          pearsSim.cx(s,:) = [r,p];
+
+          [r,p] = corr(inhIndx',AUCconfx',"type","Spearman");
+          spearSim.cx(s,:) = [r,p];
+     % AUC d-model
+          f = fit(inhIndx',AUCconfd','poly1');
+          fit_valsSim.cd(s,:) = coeffvalues(f);
+          fitsSim.cd{s,:} = f;
+          [r,p] = corr(inhIndx',AUCconfd',"type","Pearson");
+          pearsSim.cd(s,:) = [r,p];
+
+          [r,p] = corr(inhIndx',AUCconfd',"type","Spearman");
+          spearSim.cd(s,:) = [r,p];
+
+          f = fit(inhIndx',AUCdec','poly1');
+          fit_valsSim.d(s,:) = coeffvalues(f);
+          fitsSim.d{s,:} = f;
+          [r,p] = corr(inhIndx',AUCdec',"type","Pearson");
+          pearsSim.d(s,:) = [r,p];
+
+          [r,p] = corr(inhIndx',AUCdec',"type","Spearman");
+          spearSim.d(s,:) = [r,p];
+end
+
+%% Grab real, biological data from subjects 
+
+cd /Users/shaida/Documents/TI/simulations/complete/
+[~, ~, corrs] = corrPlots_sim();
+spear = corrs.spear; pears = corrs.spear; fit_vals = corrs.fit_vals;
+
+%% now do megan analysis!
+
+useControl = 0;
+
+if useControl
+    data.human = fit_vals.c(:,1) - fit_vals.d(:,1);
+    data.modelx = fit_valsSim.cx(:,1) - fit_valsSim.d(:,1);
+    data.modeld = fit_valsSim.cd(:,1) - fit_valsSim.d(:,1);
+else
+    data.human = fit_vals.c(:,1);
+    data.modelx = fit_valsSim.cx(:,1);
+    data.modeld = fit_valsSim.cd(:,1);
+end
+
+figure(); subplot(3,1,1); hist(fit_vals.c(:,1)); title('real'); 
+subplot(3,1,2); hist(fit_valsSim.cx(:,1)); title('sim x'); 
+subplot(3,1,3); hist(fit_valsSim.cd(:,1)); title('sim d'); 
+
+
+% Check AUC of model
+[~,~,~,AUC_models] = perfcurve([ones(length(data.modelx),1);zeros(length(data.modeld),1)],[data.modelx;data.modeld],0);
+% AUC of model is better when we don't use the control, so we will not use
+% the control (0.55 vs 0.58)
+
+% Create kdes
+xi = -0.25:.001:0.25;
+kde.modelx = ksdensity(data.modelx,xi);% kde.modelx = kde.modelx ./ sum(kde.modelx * .001);
+kde.modeld = ksdensity(data.modeld,xi);% kde.modeld = kde.modeld ./ sum(kde.modeld * .001);
+kde.human = ksdensity(data.human,xi);% kde.human = kde.human ./ sum(kde.human * .001);
+
+% Maximum likelihood ratio we can expect is if we got things PERFECTLY SPOT
+% ON, i.e. our human data is the same as the yellow model data
+% Find the bins at which we will look up the KDE in this case
+for i = 1:length(data.modelx)
+    [~,whichBin.modelx(i)] = min(abs(xi - data.modelx(i)));
+end
+
+% Now find which bins we will look up for the actual human
+for i = 1:length(data.human)
+    [~,whichBin.human(i)] = min(abs(xi - data.human(i)));
+end
+
+% Look up bins for 'perfect bang on' model and for human
+noiseCeiling.modelx = kde.modelx(whichBin.modelx);
+noiseCeiling.modeld = kde.modeld(whichBin.modelx);
+
+actualData.modelx = kde.modelx(whichBin.human);
+actualData.modeld = kde.modeld(whichBin.human);
+
+% Log likelihood ratios
+noiseCeiling.LLR_distribution = log(noiseCeiling.modelx ./ noiseCeiling.modeld);
+actualData.LLR_distribution = log(actualData.modelx ./ actualData.modeld);
+
+noiseCeiling.LLR_mean = mean(noiseCeiling.LLR_distribution);
+actualData.LLR_mean = mean(actualData.LLR_distribution);
+
+
+% Do some traditional stats
+[~,p,ci,stats] = ttest(data.human);
+
+% Figures
+figure();
+subplot(1,2,1);
+Y{:,1} = data.modelx;
+Y{:,2} = data.modeld;
+Y{:,3} = data.human;
+
+for i = 1:size(Y,2)
+[f, u, bb] = ksdensity(Y{i},xi);
+ f=f/max(f)*0.3; %normalize
+    F(:,i)=f;
+    U(:,i)=u;
+    MED(:,i)=nanmedian(Y{i});
+    MX(:,i)=nanmean(Y{i});
+    bw(:,i)=bb;
+end
+
+violin(Y,'xlabel',{'x-model','δ-model','humans'},'facecolor',[1 0.75 0;0 0.35 0;.3 .3 .3],'edgecolor','none','bw',bw,'mc','k','medc','r-.')
+hold on
+yline(0,'k--', 'LineWidth', 1);
+ylabel('Fitted slope')
+yticks([-0.1 -0.05 0 0.05 0.1])
+% legend('Mean', 'Median')
+
+% hold on
+% h = hist([data.modelx data.modeld],30); h = h./1000;
+% h = bar(h,'grouped');
+% set(h(1),'facecolor',[1 0.75 0]);
+% set(h(2),'facecolor',[0	0.35 0]);
+% title('Models')
+% xlabel('Linear fit slope')
+% ylabel('Proportion')
+% legend('cx','cd')
+
+% subplot(1,3,2);
+
+
+% subplot(1,3,2);
+% hold on
+% plot(xi,kde.modelx,'Color',[1 0.75 0],'linewidth',2);
+% plot(xi,kde.modeld,'Color',[0 0.35 0],'linewidth',2);
+% xline(0,'k--', 'LineWidth', 1);
+% xlim([-0.1, 0.1])
+
+
+% title('Models - KDEs')
+
+subplot(1,2,2);
+hist(actualData.LLR_distribution,20)%'facecolor',[.3 .3 .3]);
+hold on
+xline(0,'k--', 'LineWidth', 1);
+xlim([-0.15 0.15])
+xlabel('Log likelihood ratio')
+ylabel('Frequency')
+
+
+
+% subplot(1,3,3);
+% hold on
+% bins = linspace(-1,1,60);
+% h1 = hist(noiseCeiling.LLR_distribution,bins); h1 = h1 ./ 1000;
+% h2 = hist(actualData.LLR_distribution,bins); h2 = h2 ./ 20;
+% h = bar(bins,[h1; h2]','grouped');
+% set(h(1),'facecolor','black');
+% set(h(2),'facecolor','red');
+% title('Log likelihood ratios');
+% xlabel('Log likelihood ratio');
+% ylabel('Proportion')
+% legend('Noise ceiling - model-based','Empirical data')
+
+
+% set(gcf,'position',[100,200,1500,500])
+makePretty(20)
+
+
+% Confirm the t-test on the actualData.LLR_distribution
+[~,p_LLR,~,stats_LLR] = ttest(actualData.LLR_distribution);
+
+[h_check,p_check,stats_check] = lillietest(actualData.LLR_distribution);
