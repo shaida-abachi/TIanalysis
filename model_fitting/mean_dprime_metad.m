@@ -73,8 +73,14 @@ all_stimLR = stim;
 
 %% simulating MI runs with new adjusted stim and tau 
 
-newStim_mult = all_stimLR ./ ([0.008571, 0.001429; 0.007500, 0.002500; ...
-                0.006857, 0.001143; 0.006000, 0.002000]); % fitted stim/old stim LR 
+stim_multMI(1,:) = [PE01(2,2), PE01(2,2)/10]; 
+stim_multMI(2,:) = [PE02(4,2), PE02(4,2)/3]; % SPLA 02142024 changed the /5 to /3 to match the actual PE/NE ratio of real stimuli shown to humans for MI  
+stim_multMI(3,:) = [PE01(1,2), PE01(1,2)/10];
+stim_multMI(4,:) = [PE02(3,2), PE02(3,2)/3];
+
+
+newStim_mult = stim_multMI ./ ([0.008571, 0.001429; 0.007500, 0.002500; ...
+                0.006857, 0.001143; 0.006000, 0.002000]); % fitted stim/old stim LR
 
 stimMI = newStim_mult .* [0.01, 0; 0.006, 0.004; ... 
              0.006, 0; 0.0036, 0.0024]; % multiplicative factor * old stim MI 
@@ -327,6 +333,7 @@ end
 
 cd /Users/shaida/Documents/TI/simulations/complete/
 [~, ~, corrs] = corrPlots_sim();
+% [~, ~, corrs] = corrPlots_sim_shuffleConf();
 spear = corrs.spear; pears = corrs.spear; fit_vals = corrs.fit_vals;
 
 %% now do megan analysis!
