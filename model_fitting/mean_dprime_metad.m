@@ -12,6 +12,11 @@ fit_1 = [-879.941967991654 136.383362056827	-0.0103557840141724];
 % 0.2 alpha of 0.2 for low PE condition 
 fit_2 = [-665.588899044654 119.317503767596 -0.00453928763253160];
 
+% alpha of 0.1667 (1/6)
+fit_1_6 = [-728.325283097094 125.445649494197 -0.00316806314821995];
+% alpha of 0.333 (1/3)
+fit_1_3 = [-447.471395516241 97.6413608630508 0.00332510875338433];
+
 % [PE6:lowC_lowCoh PE6:lowC_hiCoh PE3:hiC_lowCoh PE3:hiC_hiCoh]
  sub(1,:)= [2.58046643 2.872464169 1.319627678 2.4148281];
  sub(2,:)= [0.6243293747 0.4826132377 0.3744850743 0.1452834641];
@@ -51,6 +56,14 @@ for stim = 1:4
     p2 = fit_2;
     p2(3) = fit_2(3) -  all_dp(stim);
     PE02(stim,:) = roots(p2); % [0.01278 0.02011 0.00785 0.01463];
+
+    p1_6 = fit_1_6;
+    p1_6(3) = fit_1_6(3) -  all_dp(stim);
+    PE01_6(stim,:) = roots(p1_6); % [0.01278 0.02011 0.00785 0.01463];
+
+    p1_3 = fit_1_3;
+    p1_3(3) = fit_1_3(3) -  all_dp(stim);
+    PE01_3(stim,:) = roots(p1_3); % [0.01278 0.02011 0.00785 0.01463];
 end
 
 
@@ -64,10 +77,15 @@ stim = [];
 % low coh low conflict, PE:NE 6:1
 % low coh hi conflict, PE:NE 3:1
 
-stim(1,:) = [PE01(2,2), PE01(2,2)/10]; 
-stim(2,:) = [PE02(4,2), PE02(4,2)/5]; 
-stim(3,:) = [PE01(1,2), PE01(1,2)/10];
-stim(4,:) = [PE02(3,2), PE02(3,2)/5];
+% stim(1,:) = [PE01(2,2), PE01(2,2)/10]; 
+% stim(2,:) = [PE02(4,2), PE02(4,2)/5]; 
+% stim(3,:) = [PE01(1,2), PE01(1,2)/10];
+% stim(4,:) = [PE02(3,2), PE02(3,2)/5];
+
+stim(1,:) = [PE01_6(2,2), PE01_6(2,2)/6]; % 1_6
+stim(2,:) = [PE01_3(4,2), PE01_3(4,2)/3]; % 1_3
+stim(3,:) = [PE01_6(1,2), PE01_6(1,2)/6]; % 1_6
+stim(4,:) = [PE01_3(3,2), PE01_3(3,2)/3]; % 1_3
 
 all_stimLR = stim;
 
@@ -78,15 +96,26 @@ all_stimLR = stim;
 % stim_multMI(3,:) = [PE01(1,2), PE01(1,2)/10];
 % stim_multMI(4,:) = [PE02(3,2), PE02(3,2)/3];
 
-newStim_mult = all_stimLR(:,1) ./ ([0.008571; 0.007500; 0.006857; 0.006000]); % fitted stim/old stim LR
+newStim_mult = all_stimLR ./ ([0.008571, 0.001429; 0.007500, 0.002500; ...
+                0.006857, 0.001143; 0.006000, 0.002000]); % fitted stim/old stim LR
+
+stimMI = newStim_mult .* [0.01, 0; 0.007, 0.003; ... 
+             0.007, 0; 0.0042, 0.0028]; % multiplicative factor * old stim MI 
+
+% stimMI = newStim_mult .* [0.01, 0; 0.006, 0.004; ... 
+%              0.006, 0; 0.0036, 0.0028]; % multiplicative factor * old stim MI 
+
+
+% newStim_mult = all_stimLR(:,1) ./ ([0.008571; 0.007500; 0.006857; 0.006000]); % fitted stim/old stim LR
 
 % stimMI = all_stimLR .* [0.01, 0; 0.006, 0.004; ... 
 %              0.006, 0; 0.0036, 0.0024]; % multiplicative factor * old stim MI 
 
-stimMI = newStim_mult .* [0.01; 0.007; 0.007; 0.0042]; % multiplicative factor * old stim MI 
-stimMI(2,2) = stimMI(2,1) /  2.333333;
-stimMI(4,2) = stimMI(4,1) /  2.333333;
+% stimMI = newStim_mult .* [0.01; 0.007; 0.007; 0.0042]; % multiplicative factor * old stim MI 
+% stimMI(2,2) = stimMI(2,1) /  2.333333;
+% stimMI(4,2) = stimMI(4,1) /  2.333333;
 
+% stimMI = [0.01, 0; 0.007, 0.003; 0.007, 0; 0.0042, 0.0028];
 
 [boldMI, ~, correctMI, saveWMI] = simBOLD_itersMI(stimMI, 0.2, 100);
 
@@ -99,16 +128,16 @@ dense_I_idx = (lowCd - hiCd) ./ (lowCd + hiCd); %SPLA changed denominator 052620
 sparse_I_idx = (lowCs - hiCs) ./ (lowCs + hiCs); %SPLA changed denominator 05262023
 
 dense_I_idx = dense_I_idx * 100;
-% if any(dense_I_idx < 0)
-%     dense_I_idx = dense_I_idx - min(dense_I_idx); % SPLA 02142024 had to add this for now negative inh index with /10, /1.5 stim 
-%     dense_I_idx(1) = .0001;
-% end
+if any(dense_I_idx < 0)
+    dense_I_idx = dense_I_idx - min(dense_I_idx); % SPLA 02142024 had to add this for now negative inh index with /10, /1.5 stim 
+    dense_I_idx(1) = .0001;
+end
 
 sparse_I_idx = sparse_I_idx * 100;
 
 %% stimulating LR runs with fitted S to d' and tau to meta-d'
 
-subjects = 1000;
+subjects = 100;
 
 parfor s = 1:subjects
    [boldLR{s}, perf{s}, correctLR{s}, saveWLR{s}] = simBOLD_iters_tau(all_stimLR, 0.2, 100);
@@ -353,9 +382,13 @@ else
     data.modeld = fit_valsSim.cd(:,1);
 end
 
-figure(); subplot(3,1,1); hist(fit_vals.c(:,1)); title('real'); 
-subplot(3,1,2); hist(fit_valsSim.cx(:,1)); title('sim x'); 
-subplot(3,1,3); hist(fit_valsSim.cd(:,1)); title('sim d'); 
+minAll = min([fit_vals.c(:,1); fit_valsSim.cx(:,1); fit_valsSim.cd(:,1)], [], 'all');
+maxAll = max([fit_vals.c(:,1); fit_valsSim.cx(:,1); fit_valsSim.cd(:,1)], [], 'all');
+
+figure(); 
+subplot(3,1,1); hist(fit_vals.c(:,1)); title('real'); xlim([minAll maxAll]); 
+subplot(3,1,2); hist(fit_valsSim.cx(:,1)); title('sim x'); xlim([minAll maxAll]); 
+subplot(3,1,3); hist(fit_valsSim.cd(:,1)); title('sim d'); xlim([minAll maxAll]); 
 
 
 % Check AUC of model
@@ -450,7 +483,7 @@ subplot(1,2,2);
 hist(actualData.LLR_distribution,20)%'facecolor',[.3 .3 .3]);
 hold on
 xline(0,'k--', 'LineWidth', 1);
-xlim([-0.15 0.15])
+xlim([-0.5 0.5])
 xlabel('Log likelihood ratio')
 ylabel('Frequency')
 
