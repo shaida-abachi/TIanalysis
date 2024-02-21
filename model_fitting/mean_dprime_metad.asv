@@ -49,6 +49,7 @@ end
 %% Plot LR behavioral performance!
 
 makePrettySize = 15; %  size of text in figures
+
 plotLRbehavior(subjects, response, answer_LR, bin_levels, 1, makePrettySize);
 
 %% simulating MI runs with new adjusted stim and tau 
