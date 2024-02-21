@@ -5,7 +5,7 @@
 % all real subjects, and the tau (post-decisional time) to the mean meta-d'
 % of all real subjects 
 
-%% creating stim variable with fitted S to d' FOR LR RUNS!!!
+%% 1. Creating stim (S) variable with fitted S to d' FOR LR RUNS!!!
 
 [lowPE, highPE] = fit_dprime([3 6]); % fit stim to d' of all subjects, 
                                       % with PE:NE ratios of 3 and 6
@@ -25,7 +25,7 @@ stim(4,:) = [lowPE(3,2), lowPE(3,2)/3]; % 1_3
 
 all_stimLR = stim;
 
-%% stimulating LR runs with fitted S to d' and tau to meta-d'
+%% 2. stimulating LR runs with fitted S to d' and tau to meta-d'
 
 subjects = 100;
 
@@ -46,13 +46,12 @@ for s = 1:subjects
     end
 end 
 
-%% Plot LR behavioral performance!
+%% 2.1. Plot LR behavioral performance!
 
 makePrettySize = 15; %  size of text in figures
-
 plotLRbehavior(subjects, response, answer_LR, bin_levels, 1, makePrettySize);
 
-%% simulating MI runs with new adjusted stim and tau 
+%% 3. simulating MI runs with new adjusted stim and tau 
 
 realLRstim = 0.8 * ([0.008571, 0.001429; 0.007500, 0.002500; ...
                 0.006857, 0.001143; 0.006000, 0.002000]); % mult by 0.8 because real stim has 0.8 coherence weight 
@@ -82,7 +81,7 @@ if any(dense_I_idx < 0) % move distribution to above 0
     dense_I_idx = dense_I_idx - min(dense_I_idx) + .0001; % add .0001 so lowest doesn't end up 0, taking log later
 end
 
-%% Calculate linear fits corrs for simulated data 
+%% 4. Calculate linear fits corrs for simulated data 
 
 for s = 1:subjects
     dolog = 1; % take the log of InhIndx?
@@ -126,7 +125,7 @@ for s = 1:subjects
           spearSim.d(s,:) = [r,p];
 end
 
-%% Grab real, biological data from subjects 
+%% 5. Grab real, biological data from subjects 
 
 shuffleConf = 0; % shuffle confidence labels to test null model?
 
@@ -139,7 +138,7 @@ end
 
 spear = corrs.spear; pears = corrs.spear; fit_vals = corrs.fit_vals;
 
-%% now do megan analysis!
+%% 6. now do megan analysis!
 
 useControl = 0; % do confidence - decisison as a control?
 
